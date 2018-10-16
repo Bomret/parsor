@@ -7,7 +7,7 @@ export class ParseSuccess<T> {
 export class ParseFailure<T> {
   isSuccess = false
 
-  constructor(public expected: T, public remainder: string) {}
+  constructor(public expected: string, public remainder: string) {}
 }
 
 export type ParseResult<T> = ParseSuccess<T> | ParseFailure<T>
