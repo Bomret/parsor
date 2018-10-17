@@ -1,8 +1,8 @@
-import { Parser, ParseResult, ParseSuccess } from './types'
+import { Parser, ParseResult, ParserSuccess } from './types'
 
 export * from './types'
 
-function isSuccess<T>(res: ParseResult<T>): res is ParseSuccess<T> {
+export function isSuccess<T>(res: ParseResult<T>): res is ParserSuccess<T> {
   return res.isSuccess
 }
 
