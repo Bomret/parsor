@@ -1,8 +1,8 @@
 import { parse } from '../src/index'
-import { number, string } from '../src/parsers'
+import { num, str } from '../src/parsers'
 
-const res = parse('abc12', string('a'), string('bc'), number(1), number(2))
+const res = parse('abc12', str('a'), str('bc'), num(1), num(2))
 console.log(res)
 
-const res2 = parse('abc12', string('A'))
+const res2 = parse('abc12', str('A'))
 console.log(res2)

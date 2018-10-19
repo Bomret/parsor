@@ -1,11 +1,26 @@
 import { isSuccess } from '.'
 import { Parser, ParserFailure, ParserSuccess } from './types'
 
+export function bind<A, B>(
+  parser: Parser<A>,
+  f: (val: A) => Parser<B>
+): Parser<B> {
+  return input => {
+    const res1 = parser(input)
+    if (!isSuccess(res1)) {
+      return res1
+    }
+
+    const p2 = f(res1.value)
+    return p2(res1.remainder)
+  }
+}
+
 export function or<A, B>(
   parser1: Parser<A>,
   parser2: Parser<B>
 ): Parser<A | B> {
-  return (input: string) => {
+  return input => {
     const res1 = parser1(input)
     if (isSuccess(res1)) return res1
 
@@ -23,14 +38,19 @@ export function pipe2<A, B, C>(
 ): Parser<C> {
   return (input: string) => {
     const res1 = parser1(input)
-    if (!isSuccess(res1)) return new ParserFailure(res1.expected, input)
+    if (!isSuccess(res1)) return res1
 
     const res2 = parser2(res1.remainder)
-    if (!isSuccess(res2)) return new ParserFailure(res2.expected, input)
+    if (!isSuccess(res2)) return res2
 
     const endResult = map(res1.value, res2.value)
 
-    return new ParserSuccess(endResult, res2.remainder)
+    return new ParserSuccess(
+      `${res1.expected} then ${res2.expected}`,
+      endResult,
+      res2.remainder,
+      res1.charsConsumed + res2.charsConsumed
+    )
   }
 }
 

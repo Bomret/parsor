@@ -1,7 +1,12 @@
 export class ParserSuccess<T> {
   isSuccess = true
 
-  constructor(public value: T, public remainder: string) {}
+  constructor(
+    public expected: string,
+    public value: T,
+    public remainder: string,
+    public charsConsumed: number
+  ) {}
 }
 
 export class ParserFailure {
@@ -10,6 +15,14 @@ export class ParserFailure {
   constructor(public expected: string, public remainder: string) {}
 }
 
-export type ParseResult<T> = ParserSuccess<T> | ParserFailure
+export type ParserReply<T> = ParserSuccess<T> | ParserFailure
 
-export type Parser<T> = (input: string) => ParseResult<T>
+export type Parser<T> = (input: string) => ParserReply<T>
+
+export type ParseResultKind = 'Success' | 'PartialSuccess' | 'Failure'
+export class ParseResult {
+  constructor(
+    public kind: ParseResultKind,
+    public results: ParserReply<any>[]
+  ) {}
+}

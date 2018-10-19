@@ -1,29 +1,30 @@
 import { Parser, ParserFailure, ParserSuccess } from '.'
-import { or } from './operators'
+import { or, pipe2 } from './operators'
 
-export function string(searchString: string): Parser<string> {
+// copied from the FParsec pfloat parser
+const NumberRegex = /^[+-]?([0-9]+)(\.[0-9]+)?([eE][+-]?[0-9]+)?/
+
+export function str(searchString: string): Parser<string> {
   return (input: string) => {
     if (!input.startsWith(searchString))
       return new ParserFailure(searchString, input)
 
-    const remainder = input.slice(searchString.length)
+    const charsToTake = searchString.length
+    const remainder = input.slice(charsToTake)
 
-    return new ParserSuccess(searchString, remainder)
+    return new ParserSuccess(searchString, searchString, remainder, charsToTake)
   }
 }
 
-export function number(num?: number): Parser<number> {
+export function num(number: number): Parser<number> {
   return (input: string) => {
-    const parsedNumber = parseFloat(input)
+    const asString = number.toString()
+    if (!input.startsWith(asString)) return new ParserFailure(asString, input)
 
-    if (!parsedNumber)
-      return new ParserFailure(num ? num.toString() : 'any number', input)
-    if (num && parsedNumber !== num)
-      return new ParserFailure(num.toString(), input)
+    const charsToTake = asString.length
+    const remainder = input.slice(charsToTake)
 
-    const remainder = input.slice(parsedNumber.toString().length)
-
-    return new ParserSuccess(parsedNumber, remainder)
+    return new ParserSuccess(asString, number, remainder, charsToTake)
   }
 }
 
@@ -35,7 +36,7 @@ export function lowerCaseLetter(): Parser<string> {
 
     const remainder = input.slice(1)
 
-    return new ParserSuccess(firstChar, remainder)
+    return new ParserSuccess('lowercase letter', firstChar, remainder, 1)
   }
 }
 
@@ -47,7 +48,7 @@ export function upperCaseLetter(): Parser<string> {
 
     const remainder = input.slice(1)
 
-    return new ParserSuccess(firstChar, remainder)
+    return new ParserSuccess('uppercase letter', firstChar, remainder, 1)
   }
 }
 
@@ -63,19 +64,65 @@ export function digit(): Parser<number> {
 
     const remainder = input.slice(1)
 
-    return new ParserSuccess(num, remainder)
+    return new ParserSuccess('any digit', num, remainder, 1)
+  }
+}
+
+export function number(): Parser<number> {
+  return input => {
+    const match = input.match(NumberRegex)
+    if (!match) return new ParserFailure('any number', input)
+
+    const charsToTake = match[0].length
+    const remainder = input.slice(charsToTake)
+
+    return new ParserSuccess(
+      'any number',
+      parseFloat(match[0]),
+      remainder,
+      charsToTake
+    )
   }
 }
 
 export function space(): Parser<string> {
   return (input: string) => {
     const firstChar = input.slice(0, 1)
-    if (firstChar !== ' ') return new ParserFailure(' ', input)
+    if (firstChar !== ' ') return new ParserFailure(`' '`, input)
 
     const remainder = input.slice(1)
 
-    return new ParserSuccess(firstChar, remainder)
+    return new ParserSuccess(`' '`, firstChar, remainder, 1)
   }
+}
+
+export function carriageReturn(): Parser<string> {
+  return (input: string) => {
+    const firstChar = input.slice(0, 1)
+    if (firstChar !== '\u000D') return new ParserFailure('\\u000D', input)
+
+    const remainder = input.slice(1)
+
+    return new ParserSuccess('\\u000D', firstChar, remainder, 1)
+  }
+}
+
+export function lineFeed(): Parser<string> {
+  return (input: string) => {
+    const firstChar = input.slice(0, 1)
+    if (firstChar !== '\u000A') return new ParserFailure('\\u000A', input)
+
+    const remainder = input.slice(1)
+
+    return new ParserSuccess('\\u000A', firstChar, remainder, 1)
+  }
+}
+
+export function newLine(): Parser<string> {
+  return or(
+    pipe2(carriageReturn(), lineFeed(), (l, r) => l + r),
+    or(lineFeed(), carriageReturn())
+  )
 }
 
 export function tab(): Parser<string> {
@@ -85,7 +132,7 @@ export function tab(): Parser<string> {
 
     const remainder = input.slice(1)
 
-    return new ParserSuccess(firstChar, remainder)
+    return new ParserSuccess('\t', firstChar, remainder, 1)
   }
 }
 
