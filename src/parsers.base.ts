@@ -1,5 +1,5 @@
 import { Parser, ParserFailure, ParserSuccess } from '.'
-import { or, pipe2 } from './operators'
+import { or } from './operators'
 
 // copied from the FParsec pfloat parser
 const NumberRegex = /^[+-]?([0-9]+)(\.[0-9]+)?([eE][+-]?[0-9]+)?/
@@ -16,15 +16,33 @@ export function str(searchString: string): Parser<string> {
   }
 }
 
-export function num(number: number): Parser<number> {
+export function anyStringUntil(stopChar: string): Parser<string> {
+  return input => {
+    const index = input.indexOf(stopChar)
+    if (index < 0)
+      return new ParserFailure(`any string until ${stopChar}`, input)
+
+    const expected = input.slice(0, index)
+    const remainder = input.slice(index)
+
+    return new ParserSuccess(
+      `any string until ${stopChar}`,
+      expected,
+      remainder,
+      expected.length
+    )
+  }
+}
+
+export function num(searchNumber: number): Parser<number> {
   return (input: string) => {
-    const asString = number.toString()
+    const asString = searchNumber.toString()
     if (!input.startsWith(asString)) return new ParserFailure(asString, input)
 
     const charsToTake = asString.length
     const remainder = input.slice(charsToTake)
 
-    return new ParserSuccess(asString, number, remainder, charsToTake)
+    return new ParserSuccess(asString, searchNumber, remainder, charsToTake)
   }
 }
 
@@ -83,63 +101,4 @@ export function number(): Parser<number> {
       charsToTake
     )
   }
-}
-
-export function space(): Parser<string> {
-  return (input: string) => {
-    const firstChar = input.slice(0, 1)
-    if (firstChar !== ' ') return new ParserFailure(`' '`, input)
-
-    const remainder = input.slice(1)
-
-    return new ParserSuccess(`' '`, firstChar, remainder, 1)
-  }
-}
-
-export function carriageReturn(): Parser<string> {
-  return (input: string) => {
-    const firstChar = input.slice(0, 1)
-    if (firstChar !== '\u000D') return new ParserFailure('\\u000D', input)
-
-    const remainder = input.slice(1)
-
-    return new ParserSuccess('\\u000D', firstChar, remainder, 1)
-  }
-}
-
-export function lineFeed(): Parser<string> {
-  return (input: string) => {
-    const firstChar = input.slice(0, 1)
-    if (firstChar !== '\u000A') return new ParserFailure('\\u000A', input)
-
-    const remainder = input.slice(1)
-
-    return new ParserSuccess('\\u000A', firstChar, remainder, 1)
-  }
-}
-
-export function newLine(): Parser<string> {
-  return or(
-    pipe2(carriageReturn(), lineFeed(), (l, r) => l + r),
-    or(lineFeed(), carriageReturn())
-  )
-}
-
-export function tab(): Parser<string> {
-  return (input: string) => {
-    const firstChar = input.slice(0, 1)
-    if (firstChar !== '\t') return new ParserFailure('\t', input)
-
-    const remainder = input.slice(1)
-
-    return new ParserSuccess('\t', firstChar, remainder, 1)
-  }
-}
-
-export function whitespace(): Parser<string> {
-  return or(space(), tab())
-}
-
-export function alphanumeric(): Parser<string | number> {
-  return or(letter(), digit())
 }
