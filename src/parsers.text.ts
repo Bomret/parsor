@@ -64,10 +64,10 @@ export function alphanumeric(): Parser<string | number> {
 
 export function word(): Parser<string> {
   return input => {
-    const [word, ...rest] = words(input)
+    const [word] = words(input)
     if (!word) return new ParserFailure('any word', input)
 
-    const remainder = input.slice(0, word.length)
+    const remainder = input.slice(word.length)
     return new ParserSuccess('any word', word, remainder, word.length)
   }
 }

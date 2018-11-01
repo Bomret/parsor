@@ -1,6 +1,6 @@
 import chai from 'chai'
-import { carriageReturn, lineFeed, newLine } from './parsers.text'
-import { ParserSuccess } from './types'
+import { carriageReturn, lineFeed, newLine, word } from './parsers.text'
+import { ParserFailure, ParserSuccess } from './types'
 
 const expect = chai.expect
 
@@ -40,5 +40,20 @@ describe('parsers.text', () => {
       expect(newLine()('\n')).to.deep.equal(
         new ParserSuccess('\\u000A', '\n', '', 1)
       ))
+  })
+
+  describe('word', () => {
+    it('should parse the first word of a multi-word string', () =>
+      expect(word()('one, two')).to.deep.equal(
+        new ParserSuccess('any word', 'one', ', two', 3)
+      ))
+
+    it('should parse the only word of a string', () =>
+      expect(word()('one')).to.deep.equal(
+        new ParserSuccess('any word', 'one', '', 3)
+      ))
+
+    it('should fail to parsean empty string', () =>
+      expect(word()('')).to.deep.equal(new ParserFailure('any word', '')))
   })
 })

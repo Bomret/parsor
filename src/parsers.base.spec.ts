@@ -1,5 +1,5 @@
 import chai from 'chai'
-import { digit, num, number } from './parsers.base'
+import { anyStringUntil, digit, num, number } from './parsers.base'
 import { ParserFailure, ParserSuccess } from './types'
 
 const expect = chai.expect
@@ -84,6 +84,24 @@ describe('parsers', () => {
     it('should parse 1 from 1.2a correctly', () =>
       expect(digit()('1.2a')).to.deep.equal(
         new ParserSuccess('any digit', 1, '.2a', 1)
+      ))
+  })
+
+  describe('anyString', () => {
+    const testString = 'one, three, four and five!'
+    it('should not parse anything for empty string as separator', () =>
+      expect(anyStringUntil('')(testString)).to.deep.equal(
+        new ParserSuccess('any string until ', '', testString, 0)
+      ))
+
+    it('should parse only until the first occurrence of the search string', () =>
+      expect(anyStringUntil(',')(testString)).to.deep.equal(
+        new ParserSuccess(
+          'any string until ,',
+          'one',
+          ', three, four and five!',
+          3
+        )
       ))
   })
 })
